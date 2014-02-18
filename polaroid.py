@@ -36,73 +36,103 @@ SSIDE = 900 # px
 BORDER = 50 #px
 
 # photo ratio. No unit, just ratio
-PLSIDE = 1
-PSSIDE = 1
+PLSIDE = 5
+PSSIDE = 4
 
 BgDrawingFunc = DrawBackground
 BorderDrawingFunc = DrawBorder
 
-# Load image
-photo = Image.open(sys.argv[1])
-photo_width = photo.size[0]
-photo_height = photo.size[1]
+class Stylizer:
+    def __init__(self):
+        self.long_side = LSIDE
+        self.short_side = SSIDE
+        self.border = BORDER
+        self.p_long_side = PLSIDE
+        self.p_short_side = PSSIDE
+        self.bgDrawer = BgDrawingFunc
+        self.bdrDrawer = BorderDrawingFunc
 
-# 0: vertical, 1: horizontal
-orientation = 0 if photo_width <= photo_height else 1
+    def setOutputDimemsion(self, longSide, shortSide):
+        self.long_side = longSide
+        self.short_side = shortSide
 
-# Crop if need
-if orientation == 0:
-    # verticle, crop upper and down piece
-    crop_length = int(float(photo_width) / float(PSSIDE) * float(PLSIDE))
-    if crop_length < photo_height:
-        offset = (photo_height - crop_length) / 2
-        photo = photo.crop((0, offset,
-                            photo_width, crop_length + offset))
-        photo_height = photo.size[1]
-else:
-    crop_length = int(float(photo_height) / float(PSSIDE) * float(PLSIDE))
-    print photo_height, crop_length
-    if crop_length < photo_width:
-        offset = (photo_width - crop_length) / 2
-        photo = photo.crop((offset, 0,
-                            crop_length + offset, photo_height))
+    def setBorder(self, border):
+        self.border = border;
+
+    def setPhotoEdgeRatio(self, longSide, shortSide):
+        self.p_long_side = longSide
+        self.p_short_side = shortSide
+
+    # Pass a function that takes a PIL image as a parameter,
+    # and return a PIL image.
+    def setBgDrawer(self, bgDrawer):
+        self.bgDrawer = bgDrawer
+
+    # Pass function func(image, width, height)
+    # which returns a PIL image.
+    def setBorderDrawer(self, bdrDrawer):
+        self.bdrDrawer = bdrDrawer
+
+    def draw(self, im):
+        # Load image
+        photo = im
         photo_width = photo.size[0]
+        photo_height = photo.size[1]
 
-# recalculate orientation, to handle the case that photo become
-# square after crop.
-# 0: vertical, 1: horizontal
-orientation = 0 if photo_width <= photo_height else 1
+        # 0: vertical, 1: horizontal
+        orientation = 0 if photo_width <= photo_height else 1
 
-im_size = (SSIDE, LSIDE) if orientation == 0 else (LSIDE, SSIDE)
-im = Image.new("RGB", im_size)
+        # Crop if need
+        if orientation == 0:
+            # verticle, crop upper and down piece
+            crop_length = int(float(photo_width) / float(self.p_short_side) * float(self.p_long_side))
+            if crop_length < photo_height:
+                offset = (photo_height - crop_length) / 2
+                photo = photo.crop((0, offset,
+                                    photo_width, crop_length + offset))
+                photo_height = photo.size[1]
+        else:
+            crop_length = int(float(photo_height) / float(self.p_short_side) * float(self.p_long_side))
+            if crop_length < photo_width:
+                offset = (photo_width - crop_length) / 2
+                photo = photo.crop((offset, 0,
+                                    crop_length + offset, photo_height))
+                photo_width = photo.size[0]
 
-im = BgDrawingFunc(im)
+        # recalculate orientation, to handle the case that photo become
+        # square after crop.
+        # 0: vertical, 1: horizontal
+        orientation = 0 if photo_width <= photo_height else 1
 
-# compute target size
-target_width = 0
-target_height = 0
-if orientation == 0:
-    target_width = im_size[0] - 2 * BORDER
-    target_height = int(float(target_width) / float(photo_width) * float(photo_height))
-else:
-    target_height = im_size[1] - 2 * BORDER
-    target_width = int(float(target_height) / float(photo_height) * float(photo_width))
+        im_size = (self.short_side, self.long_side) if orientation == 0 else (self.long_side, self.short_side)
+        im = Image.new("RGB", im_size)
 
-# create border
-border_box_width = 0
-border_box_heigth = 0
-if orientation == 0:
-    border_box_width = im_size[0]
-    border_box_heigth = target_height + 2 * BORDER
-else:
-    border_box_width = target_width + 2 * BORDER
-    border_box_heigth = im_size[1]
-im = DrawBorder(im, border_box_width, border_box_heigth)
+        im = self.bgDrawer(im)
 
-# paste photo layer
-photo = photo.resize((target_width, target_height))
-im.paste(photo, (BORDER, BORDER))
-if len(sys.argv) > 2:
-    im.save(sys.argv[2])
-else:
-    im.show()
+        # compute target size
+        target_width = 0
+        target_height = 0
+        if orientation == 0:
+            target_width = im_size[0] - 2 * self.border
+            target_height = int(float(target_width) / float(photo_width) * float(photo_height))
+        else:
+            target_height = im_size[1] - 2 * self.border
+            target_width = int(float(target_height) / float(photo_height) * float(photo_width))
+
+        # create border
+        border_box_width = 0
+        border_box_heigth = 0
+        if orientation == 0:
+            border_box_width = im_size[0]
+            border_box_heigth = target_height + 2 * self.border
+        else:
+            border_box_width = target_width + 2 * self.border
+            border_box_heigth = im_size[1]
+        im = self.bdrDrawer(im, border_box_width, border_box_heigth)
+
+        # paste photo layer
+        photo = photo.resize((target_width, target_height))
+        im.paste(photo, (self.border, self.border))
+        return im
+
+Stylizer().draw(Image.open(sys.argv[1])).show()
