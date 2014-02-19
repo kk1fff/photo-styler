@@ -18,5 +18,5 @@ for i in file_list:
 
     print("Processing: {0}".format(fn))
 
-    s.draw(Image.open(i)).save(fp + "/M_" + fn)
+    s.draw(Image.open(i)).save("M_" + fn)
 
