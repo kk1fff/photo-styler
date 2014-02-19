@@ -226,5 +226,6 @@ class Stylizer:
                 txtPos = (txtPos[0], txtPos[1] + txtDrw.textsize(s)[1])
         return im
 
-s = Stylizer()
-s.draw(Image.open(sys.argv[1]), None).save(sys.argv[2])
+if __name__ == "__main__":
+    s = Stylizer()
+    s.draw(Image.open(sys.argv[1]), None).save(sys.argv[2])
