@@ -4,7 +4,8 @@
 from PIL import Image, ImageDraw, ImageColor, ImageFont
 import sys, random, math
 
-CIRCLEBACKCOLOR = ["red", "yellow", "#a0a0ff", "#a0ffa0", "#ffffa0"]
+CIRCLEBACKCOLOR = ["#ffa0a0", "#ffff99", "#a0a0ff",
+                   "#a0ffa0", "#ffffa0", "#33ccff"]
 
 def DrawCircleBackground(im):
     dr = ImageDraw.Draw(im)
@@ -12,26 +13,25 @@ def DrawCircleBackground(im):
     dr = None
 
     diagonal = int(math.sqrt(float(im.size[0] * im.size[0] + im.size[1] * im.size[1])))
-    maxr = diagonal / 20
-    border = max(diagonal / 50, 1)
+    maxr = max(diagonal / 20, 10)
+    minr = max(maxr / 2, 5)
+    border = 5 # max(diagonal / 50, 1)
+    color_index = 0
 
     for i in range(40):
         randx = random.randint(0, im.size[0])
         randy = random.randint(0, im.size[1])
-        randr = random.randint(1, maxr if maxr > 1 else 1)
-        imDrw = Image.new("RGB", im.size, "white")
-        box = [randx - randr, randy - randr,
-               randx + randr, randy + randr]
-        outterbox = [box[0] - border, box[1] - border,
-                     box[2] + border, box[3] + border]
+        randr = random.randint(minr, maxr)
+        imgSize = (randr * 2, randr * 2)
 
-        drImDrw = ImageDraw.Draw(imDrw)
-        # drImDrw.ellipse(outterbox, CIRCLEBACKCOLOR[random.randint(0, len(CIRCLEBACKCOLOR) - 1)])
-        drImDrw.ellipse(box, CIRCLEBACKCOLOR[random.randint(0, len(CIRCLEBACKCOLOR) - 1)])
-        mask = Image.new("L", im.size, 0)
+        imDrw = Image.new("RGB", imgSize, CIRCLEBACKCOLOR[color_index])
+        color_index = (color_index + 1) % len(CIRCLEBACKCOLOR)
+        mask = Image.new("L", imgSize, 0)
         drMask = ImageDraw.Draw(mask)
-        drMask.ellipse(box, 127)
-        im.paste(imDrw, mask)
+        drMask.ellipse([(0, 0), imgSize], 150)
+        drMask.ellipse([(border, border),
+                        (imgSize[0] - border, imgSize[1] - border)], 128)
+        im.paste(imDrw, (randx - randr, randy - randr), mask)
     return im
 
 # frm, to: (r, g, b)
@@ -49,7 +49,7 @@ def DrawBackground(im):
     dr = ImageDraw.Draw(im)
     count = 0
     for c in buildGradient(ImageColor.getrgb("#ffffcc"),
-                           ImageColor.getrgb("white"), 20):
+                           ImageColor.getrgb("white"), 100):
         dr.rectangle([(count, count), (im.size[0]-count, im.size[1]-count)],
                       fill = c)
         count = count + 1
@@ -57,7 +57,7 @@ def DrawBackground(im):
 
 def DrawBorder(im, width, height):
     bdr = Image.new("RGB", (width, height), "#c0c0c0")
-    bdr_alpha = Image.new("L", (width, height), 32)
+    bdr_alpha = Image.new("L", (width, height), 48)
     im.paste(bdr, (0, 0), bdr_alpha)
     return im
 
