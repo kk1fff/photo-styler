@@ -62,9 +62,13 @@ def DrawBorder(im, width, height):
     return im
 
 # Size of result image.
-LSIDE = 1200 # px
-SSIDE = 900 # px
-BORDER = 50 #px
+LSIDE = 3600 # px
+SSIDE = 2400 # px
+BORDER = 100 # px
+
+# Border around the photo
+THIN_BORDER = 5 #px
+THIN_BORDER_COLOR = "#303030"
 
 # photo ratio. No unit, just ratio
 PLSIDE = 1
@@ -87,6 +91,8 @@ class Stylizer:
         self.bgDrawer = BgDrawingFunc
         self.bdrDrawer = BorderDrawingFunc
         self.font = ImageFont.load_default()
+        self.thin_border = THIN_BORDER
+        self.thin_border_color = THIN_BORDER_COLOR
 
     def setOutputDimemsion(self, longSide, shortSide):
         self.long_side = longSide
@@ -185,6 +191,15 @@ class Stylizer:
             border_box_heigth = im_size[1]
         im = self.bdrDrawer(im, border_box_width, border_box_heigth)
 
+        # draw thin border
+        drwThinBorder = ImageDraw.Draw(im)
+        drwThinBorder.rectangle([self.border - self.thin_border,
+                                 self.border - self.thin_border,
+                                 self.border + target_width + self.thin_border,
+                                 self.border + target_height + self.thin_border],
+                                self.thin_border_color)
+        drwThinBorder = None
+
         # paste photo layer
         photo = photo.resize((target_width, target_height))
         im.paste(photo, (self.border, self.border))
@@ -212,5 +227,4 @@ class Stylizer:
         return im
 
 s = Stylizer()
-s.setFont("sample.ttc", 64)
 s.draw(Image.open(sys.argv[1]), None).save(sys.argv[2])
