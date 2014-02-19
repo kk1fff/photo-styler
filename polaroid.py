@@ -1,7 +1,38 @@
+# coding: utf-8
 # python
 
-from PIL import Image, ImageDraw, ImageColor
-import sys
+from PIL import Image, ImageDraw, ImageColor, ImageFont
+import sys, random, math
+
+CIRCLEBACKCOLOR = ["red", "yellow", "#a0a0ff", "#a0ffa0", "#ffffa0"]
+
+def DrawCircleBackground(im):
+    dr = ImageDraw.Draw(im)
+    dr.rectangle([(0, 0), im.size], "white")
+    dr = None
+
+    diagonal = int(math.sqrt(float(im.size[0] * im.size[0] + im.size[1] * im.size[1])))
+    maxr = diagonal / 20
+    border = max(diagonal / 50, 1)
+
+    for i in range(40):
+        randx = random.randint(0, im.size[0])
+        randy = random.randint(0, im.size[1])
+        randr = random.randint(1, maxr if maxr > 1 else 1)
+        imDrw = Image.new("RGB", im.size, "white")
+        box = [randx - randr, randy - randr,
+               randx + randr, randy + randr]
+        outterbox = [box[0] - border, box[1] - border,
+                     box[2] + border, box[3] + border]
+
+        drImDrw = ImageDraw.Draw(imDrw)
+        # drImDrw.ellipse(outterbox, CIRCLEBACKCOLOR[random.randint(0, len(CIRCLEBACKCOLOR) - 1)])
+        drImDrw.ellipse(box, CIRCLEBACKCOLOR[random.randint(0, len(CIRCLEBACKCOLOR) - 1)])
+        mask = Image.new("L", im.size, 0)
+        drMask = ImageDraw.Draw(mask)
+        drMask.ellipse(box, 127)
+        im.paste(imDrw, mask)
+    return im
 
 # frm, to: (r, g, b)
 def buildGradient(frm, to, step):
@@ -15,7 +46,7 @@ def buildGradient(frm, to, step):
 
 def DrawBackground(im):
     # compute gradient
-    dr = ImageDraw.Draw(im);
+    dr = ImageDraw.Draw(im)
     count = 0
     for c in buildGradient(ImageColor.getrgb("#ffffcc"),
                            ImageColor.getrgb("white"), 20):
@@ -36,11 +67,15 @@ SSIDE = 900 # px
 BORDER = 50 #px
 
 # photo ratio. No unit, just ratio
-PLSIDE = 5
-PSSIDE = 4
+PLSIDE = 1
+PSSIDE = 1
 
-BgDrawingFunc = DrawBackground
+# Default delegate
+BgDrawingFunc = DrawCircleBackground
 BorderDrawingFunc = DrawBorder
+
+# Default font setting
+FONTSIZE = 64
 
 class Stylizer:
     def __init__(self):
@@ -51,6 +86,7 @@ class Stylizer:
         self.p_short_side = PSSIDE
         self.bgDrawer = BgDrawingFunc
         self.bdrDrawer = BorderDrawingFunc
+        self.font = ImageFont.load_default()
 
     def setOutputDimemsion(self, longSide, shortSide):
         self.long_side = longSide
@@ -73,7 +109,26 @@ class Stylizer:
     def setBorderDrawer(self, bdrDrawer):
         self.bdrDrawer = bdrDrawer
 
-    def draw(self, im):
+    def setFont(self, fontPath, fontSize):
+        self.font = ImageFont.truetype(fontPath, fontSize)
+
+    def wrapText(self, drw, txt, width):
+        buf = ""
+        isFirst = True
+        for c in txt:
+            if drw.textsize(buf + c, self.font)[0] <= width:
+                buf = buf + c
+            elif isFirst:
+                # can't wrap even with only one character,
+                # don't try to wrap then.
+                return txt
+            else:
+                # need a line break
+                buf = buf + "\n" + c
+            isFirst = False
+        return buf
+
+    def draw(self, im, textOnImage = None):
         # Load image
         photo = im
         photo_width = photo.size[0]
@@ -133,6 +188,29 @@ class Stylizer:
         # paste photo layer
         photo = photo.resize((target_width, target_height))
         im.paste(photo, (self.border, self.border))
+
+        # Write text
+        if textOnImage != None:
+            txtDrw = ImageDraw.Draw(im)
+
+            txtPos = None
+            wrapWidth = 0
+            # use white area.
+            if orientation == 0:
+                txtPos = (self.border, target_height + 2 * self.border)
+                wrapWidth = im_size[0] - 2 * self.border
+            else:
+                txtPos = (target_width + 2 * self.border, self.border)
+                wrapWidth = im_size[0] - 3 * self.border - target_width
+
+            # textOnImage = self.wrapText(txtDrw, textOnImage, wrapWidth)
+
+            # draw multi-line
+            for s in textOnImage.split("\n"):
+                txtDrw.text(txtPos, s, "black", self.font)
+                txtPos = (txtPos[0], txtPos[1] + txtDrw.textsize(s)[1])
         return im
 
-Stylizer().draw(Image.open(sys.argv[1])).show()
+s = Stylizer()
+s.setFont("sample.ttc", 64)
+s.draw(Image.open(sys.argv[1]), None).save(sys.argv[2])
