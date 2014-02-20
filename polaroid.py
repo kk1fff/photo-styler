@@ -77,6 +77,17 @@ class OldStyleBackgroundBuilder(BackgroundBuilder):
             count = count + 1
         return im
 
+class RandomBackgroundBuilder(BackgroundBuilder):
+    def __init__(self):
+        self.builders = []
+
+    def addBackgroundBuilder(self, builder):
+        self.builders.append(builder)
+
+    def drawBackground(self, im):
+        return self.builders[
+            random.randint(0, len(self.builders) - 1)].drawBackground(im)
+
 class BlackBorderBuilder(BorderBuilder):
     def drawBorder(self, im, dimension):
         width, height = dimension

@@ -7,6 +7,10 @@ s = polaroid.Stylizer()
 s.setOutputDimemsion(3200, 2400)
 s.setBorder(100)
 
+bgBuilder = polaroid.RandomBackgroundBuilder()
+bgBuilder.addBackgroundBuilder(polaroid.OldStyleBackgroundBuilder())
+bgBuilder.addBackgroundBuilder(polaroid.CircleBackgroundBuilder())
+s.setBgBuilder(bgBuilder)
 file_list = []
 for i in sys.argv[1:]:
     file_list.extend(glob.glob(i))
