@@ -76,6 +76,7 @@ PSSIDE = 1
 
 # Default delegate
 BgDrawingFunc = DrawCircleBackground
+BgDrawingFuncs = [DrawCircleBackground, DrawBackground]
 BorderDrawingFunc = DrawBorder
 
 # Default font setting
@@ -93,6 +94,7 @@ class Stylizer:
         self.font = ImageFont.load_default()
         self.thin_border = THIN_BORDER
         self.thin_border_color = THIN_BORDER_COLOR
+        self.is_background_style_rand = True
 
     def setOutputDimemsion(self, longSide, shortSide):
         self.long_side = longSide
@@ -134,7 +136,14 @@ class Stylizer:
             isFirst = False
         return buf
 
+    def setRandomBackgroundStyle(self, isRandom):
+        self.is_background_style_rand = isRandom
+
     def draw(self, im, textOnImage = None):
+        # decide background style
+        if self.is_background_style_rand:
+            self.bgDrawer = BgDrawingFuncs[random.randint(0, len(BgDrawingFuncs) - 1)]
+
         # Load image
         photo = im
         photo_width = photo.size[0]
