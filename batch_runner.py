@@ -4,7 +4,7 @@ import polaroid, sys, glob, os
 concate = True
 
 s = polaroid.Stylizer()
-s.setOutputDimemsion(3600, 2400)
+s.setOutputDimemsion(3200, 2400)
 s.setBorder(100)
 
 file_list = []
@@ -22,9 +22,12 @@ for i in file_list:
     fn = os.path.basename(i)
     fp = os.path.dirname(i)
 
+    try:
+        im = s.draw(Image.open(i))
+    except:
+        continue
     print("Processing: {0}".format(fn))
 
-    im = s.draw(Image.open(i))
     if concate:
         if count % 2 == 0:
             outputImg = Image.new("RGB", (im.size[0] * 2, im.size[1]))

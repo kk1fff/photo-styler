@@ -62,7 +62,7 @@ def DrawBorder(im, width, height):
     return im
 
 # Size of result image.
-LSIDE = 3600 # px
+LSIDE = 3200 # px
 SSIDE = 2400 # px
 BORDER = 100 # px
 
